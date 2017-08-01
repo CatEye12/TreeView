@@ -115,14 +115,12 @@ namespace WindowsFormsApplication1
             }
         }
 
-        public void  AddNode(string nodeName)
+        public void  AddNode(TreeView treeView, TextBox txt)
         {
             #region
             //var results = from myRow in dt.AsEnumerable()
             //              where myRow.Field<string>("ProjectName") == nodeName
             //              select myRow;
-
-            //string getNodeByName = "SELECT PH.hid.ToString() FROM ProjectHid PH INNER JOIN IN Projects P ON P.ProjectId = PH.ProjectID where P.ProjectName = ";
 
             //var query2 = from TNodes in dt.AsEnumerable()
             //             where TNodes.Field<string>("ProjectID").Equals(1)
@@ -138,37 +136,58 @@ namespace WindowsFormsApplication1
             //}
             //return rr;
             #endregion
-            SqlHierarchyId maxChildHid;
 
-            string getParent = "SELECT PH.ProjectHid.ToString() FROM"
-                            + " ProjectHid PH INNER JOIN Projects Projects P"
-                            + " ON P.ProjectID = PH.ProjectID"
-                            + " WHERE P.ProjectName = " + nodeName;
-            string getMaxChildHid = "SELECT MAX(ProjectHid) FROM"
-                            + " ProjectHid PH INNER JOIN Projects Projects P"
-                            + " ON P.ProjectID = PH.ProjectID"
-                            + " WHERE ProjectHid.GetAncestor(1) = " + getParent;
-            
-            
-            SqlCommand getParentCom = conn.CreateCommand();
-            SqlCommand getMaxChildHidCom = conn.CreateCommand();
+            #region 31.07
+            //TreeNode selectedNode = treeView.SelectedNode;
+            //TreeNode newNode;
 
-            getParentCom.CommandType = CommandType.Text;
-            getParentCom.CommandText = getParent;
-            
-            getMaxChildHidCom.CommandType = CommandType.Text;
-            getMaxChildHidCom.CommandText = getParent;
+            //SqlHierarchyId childNull = new SqlHierarchyId();
+            //SqlHierarchyId newChild;
+            //MessageBox.Show(dt.Rows.Count.ToString()); 
+            //MessageBox.Show(txt.Text);
+            //EnumerableRowCollection parentHid = from rows in dt.AsEnumerable()
+            //                where rows.Field<string>("ProjectName").Equals(selectedNode.Text)
+            //                select rows;
 
-            da.SelectCommand = getParentCom;
+            //EnumerableRowCollection<SqlHierarchyId> childHid = from rows in dt.AsEnumerable()
+            //                where rows.Field<SqlHierarchyId>("ProjectHid").Equals(parentHid)
+            //                select rows.Field<SqlHierarchyId>("hid");
             
+            //SqlCommand command = new SqlCommand();
+            //command.CommandType = CommandType.Text;
+            
+            //foreach (var item in parentHid)
+            //{
+            //    //add first child node
+            //    if (selectedNode.GetNodeCount(false) == 0)
+            //    {
+            //      //  newChild = item.GetDescendant(childNull, childNull);
+
+            //        command.CommandText = "INSERT INTO Employees VALUES(" + newChild + ", " + txt.Text + ")";
+            //        da.SelectCommand = command;
+            //        da.Fill(dt);
+            //    }
+            //    //add other nodes after first
+            //    else
+            //    {
+            //        //newChild = item.GetDescendant(childHid, childNull);
+            //        //da.SelectCommand = command;
+            //        //command.CommandText = "INSERT INTO Employees VALUES(" + newChild + ", " + txt.Text + ")";
+            //    }
+            //}
+            #endregion
+
+            TreeNode selectedNode = treeView.SelectedNode;
+            SqlDataReader reader;
+            SqlCommand command2 = new SqlCommand("AddFirstChildNode", conn);
+            command2.CommandType = CommandType.StoredProcedure;
+            command2.Parameters.AddWithValue("@parent", selectedNode.Text);
+            command2.Parameters.AddWithValue("@new_child", txt.Text);
+
+            reader = command2.ExecuteReader();
+            reader.Close();
             da.Fill(dt);
-        }
-        
-        public void AddTrNd(TreeView tr, TextBox txt)
-        {
-            TreeNode selectedNode = tr.SelectedNode;
-            string projectName = txt.Text;
-            selectedNode.Nodes.Add(new TreeNode(projectName));
+            
         }
     }
 }

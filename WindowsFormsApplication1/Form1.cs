@@ -17,12 +17,15 @@ namespace WindowsFormsApplication1
         private void Form1_Load(object sender, EventArgs e)
         {            
             tr.MakeTreeView(this.treeView1);
+            AddChild child = new AddChild();
+            child.Show();
         }
+
+        //Adds child node
         private void button2_Click(object sender, EventArgs e)
         {
-            //AddChild child = new AddChild();
-            //child.Show();
-            tr.AddNode(textBox1.Text);
+
+            tr.AddNode(treeView1, textBox1);
             //tr.AddTrNd(treeView1, textBox1);
             //MessageBox.Show(selectedNode.Text);
             //MessageBox.Show(tr.AddNode(selectedNode.Text));
