@@ -179,15 +179,23 @@ namespace WindowsFormsApplication1
 
             TreeNode selectedNode = treeView.SelectedNode;
             SqlDataReader reader;
-            SqlCommand command2 = new SqlCommand("AddFirstChildNode", conn);
+
+            // SqlCommand command2 = new SqlCommand("AddFirstChildNode", conn);
+            SqlCommand command2 = new SqlCommand("GetChildHid", conn);
+            
             command2.CommandType = CommandType.StoredProcedure;
-            command2.Parameters.AddWithValue("@parent", selectedNode.Text);
-            command2.Parameters.AddWithValue("@new_child", txt.Text);
+            command2.Parameters.AddWithValue("@parent_name", selectedNode.Text);
+            command2.Parameters.AddWithValue("@new_child_name", txt.Text);
 
             reader = command2.ExecuteReader();
+            
+            //while (reader.Read())
+            //{
+            //    string name = reader.GetString(reader.GetOrdinal("name"));
+            //    MessageBox.Show(name);
+            //}
             reader.Close();
             da.Fill(dt);
-            
         }
     }
 }
