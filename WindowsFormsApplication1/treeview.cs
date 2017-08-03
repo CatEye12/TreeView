@@ -1,24 +1,20 @@
 ﻿using Microsoft.SqlServer.Types;
-using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace WindowsFormsApplication1
 {
-    class treeview
+    class MyTreeView
     {
         DataTable dt;
         SqlDataAdapter da;
         SqlConnection conn;
-        public treeview()
+        public MyTreeView()
         {
             dt = new DataTable();
-
+            da = new SqlDataAdapter();
             conn = new SqlConnection();
             conn.ConnectionString = "Data Source=pdmsrv;Initial Catalog=TaskDataBase;Persist Security Info=True;User ID=airventscad;Password=1";
             conn.Open();
@@ -27,23 +23,12 @@ namespace WindowsFormsApplication1
                 
         private DataTable GetData()
         {
-            //SqlConnection conn = new SqlConnection();
-            //conn.ConnectionString = "Data Source=pdmsrv;Initial Catalog=TaskDataBase;Persist Security Info=True;User ID=airventscad;Password=1";
-            //conn.Open();
             string query = "SELECT PH.hid.ToString() AS hid, P.ProjectName, P.ProjectID "
                             + "FROM ProjectHid "
                             + "PH INNER JOIN Projects P ON P.ProjectID = PH.ProjectID";
-
             
+
             SqlCommand command = conn.CreateCommand();
-            da = new SqlDataAdapter();
-            SqlParameter par = new SqlParameter();
-
-            par.ParameterName = "hid";
-            par.Value = 30;
-            par.SqlDbType = SqlDbType.Int;
-            par.Direction = par.Direction;
-
             command.CommandType = CommandType.Text;
             command.CommandText = query;
 
@@ -64,29 +49,36 @@ namespace WindowsFormsApplication1
         }
         public void MakeTreeView(TreeView oTV)
         {
+            MessageBox.Show("Nodes quantity = " + oTV.Nodes.Count.ToString());
+            
             oTV.Nodes.Clear();
-
             string sKeyField = "HierarchyId";
             TreeNode oNode;
+
             SqlHierarchyId iID = new SqlHierarchyId();
+                      
             EnumerableRowCollection<DataRow> query2 = from TNodes in dt.AsEnumerable()
                                                       where TNodes.Field<SqlHierarchyId>(sKeyField).GetAncestor(1).Equals(iID)
                                                       select TNodes;
+            
             DataView oDV = query2.AsDataView();
+            
             if (oDV.Count == 1)
             {
                 //load up a node
                 oNode = new TreeNode(oDV[0]["ProjectName"].ToString());
-
+                
                 //put the datarow into the tag property
                 oNode.Tag = oDV[0].Row;
                 oNode.Expand();
+
                 //load up the children
                 LoadNodeSQLHierarchy(oNode, dt);
 
                 //add the node hierarchy to the tree
                 oTV.Nodes.Add(oNode);
             }
+            MessageBox.Show("ODV quantity = " + oDV.Count.ToString());
         }
         private void LoadNodeSQLHierarchy(TreeNode oParent, DataTable oTable)
         {
@@ -115,87 +107,43 @@ namespace WindowsFormsApplication1
             }
         }
 
-        public void  AddNode(TreeView treeView, TextBox txt)
+        public void AddNode(TreeView treeView, TextBox txt, TextBox txtNumber)
         {
-            #region
-            //var results = from myRow in dt.AsEnumerable()
-            //              where myRow.Field<string>("ProjectName") == nodeName
-            //              select myRow;
-
-            //var query2 = from TNodes in dt.AsEnumerable()
-            //             where TNodes.Field<string>("ProjectID").Equals(1)
-            //             select TNodes;
-
-            //DataView oDV = query2.AsDataView();
-
-            //string rr = null;
-
-            //if (oDV.Count == 1)
-            //{
-            //    rr =  oDV[0]["ProjectID"].ToString();
-            //}
-            //return rr;
-            #endregion
-
-            #region 31.07
-            //TreeNode selectedNode = treeView.SelectedNode;
-            //TreeNode newNode;
-
-            //SqlHierarchyId childNull = new SqlHierarchyId();
-            //SqlHierarchyId newChild;
-            //MessageBox.Show(dt.Rows.Count.ToString()); 
-            //MessageBox.Show(txt.Text);
-            //EnumerableRowCollection parentHid = from rows in dt.AsEnumerable()
-            //                where rows.Field<string>("ProjectName").Equals(selectedNode.Text)
-            //                select rows;
-
-            //EnumerableRowCollection<SqlHierarchyId> childHid = from rows in dt.AsEnumerable()
-            //                where rows.Field<SqlHierarchyId>("ProjectHid").Equals(parentHid)
-            //                select rows.Field<SqlHierarchyId>("hid");
-            
-            //SqlCommand command = new SqlCommand();
-            //command.CommandType = CommandType.Text;
-            
-            //foreach (var item in parentHid)
-            //{
-            //    //add first child node
-            //    if (selectedNode.GetNodeCount(false) == 0)
-            //    {
-            //      //  newChild = item.GetDescendant(childNull, childNull);
-
-            //        command.CommandText = "INSERT INTO Employees VALUES(" + newChild + ", " + txt.Text + ")";
-            //        da.SelectCommand = command;
-            //        da.Fill(dt);
-            //    }
-            //    //add other nodes after first
-            //    else
-            //    {
-            //        //newChild = item.GetDescendant(childHid, childNull);
-            //        //da.SelectCommand = command;
-            //        //command.CommandText = "INSERT INTO Employees VALUES(" + newChild + ", " + txt.Text + ")";
-            //    }
-            //}
-            #endregion
-
             TreeNode selectedNode = treeView.SelectedNode;
             SqlDataReader reader;
+            SqlCommand command;
 
-            // SqlCommand command2 = new SqlCommand("AddFirstChildNode", conn);
-            SqlCommand command2 = new SqlCommand("GetChildHid", conn);
-            
-            command2.CommandType = CommandType.StoredProcedure;
-            command2.Parameters.AddWithValue("@parent_name", selectedNode.Text);
-            command2.Parameters.AddWithValue("@new_child_name", txt.Text);
+            SqlCommand checkingNodes = new SqlCommand("CheckForNodes", conn);
+            checkingNodes.Parameters.AddWithValue("@parent_name", selectedNode.Text);
+            checkingNodes.Parameters.Add("@result", SqlDbType.Int);
+            checkingNodes.Parameters["@result"].Direction = ParameterDirection.Output;
+            checkingNodes.CommandType = CommandType.StoredProcedure;
 
-            reader = command2.ExecuteReader();
-            
-            //while (reader.Read())
-            //{
-            //    string name = reader.GetString(reader.GetOrdinal("name"));
-            //    MessageBox.Show(name);
-            //}
+            reader = checkingNodes.ExecuteReader();
+            int flag = 1;
+            flag = (int)checkingNodes.Parameters["@result"].Value;
             reader.Close();
+            
+            if (flag == 1)
+            {
+                command = new SqlCommand("AddFirstChildNode2", conn);
+                MessageBox.Show("First node");
+            }
+            else
+            {
+                command = new SqlCommand("AddSecondaryNodes2", conn);
+                MessageBox.Show("Other node");
+            }
+            
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@parent_name", selectedNode.Text);
+            command.Parameters.AddWithValue("@new_child_name", txt.Text);
+            command.Parameters.AddWithValue("@number", txtNumber.Text);
+            reader = command.ExecuteReader();
+            reader.Close();
+
             da.Fill(dt);
+            dt.AcceptChanges();
         }
     }
 }
