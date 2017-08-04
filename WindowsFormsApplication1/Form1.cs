@@ -24,19 +24,22 @@ namespace WindowsFormsApplication1
         private void button2_Click(object sender, EventArgs e)
         {
             tr.AddNode(treeView1, textBox1, textBox2);
+            //tr = new MyTreeView();
             tr.MakeTreeView(treeView1);
         }
-
+        //delete child node
         private void button3_Click(object sender, EventArgs e)
         {
             TreeNode selectedNode = treeView1.SelectedNode;
             selectedNode.Nodes.Remove(selectedNode);
         }
+
         public string Txt
         {
             get { return textBox1.Text; }
             set { textBox1.Text = value; }
         }
+
         public TreeView Tr
         {
             get { return this.treeView1; }

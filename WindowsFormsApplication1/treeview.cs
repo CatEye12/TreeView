@@ -13,16 +13,15 @@ namespace WindowsFormsApplication1
         SqlConnection conn;
         public MyTreeView()
         {
-            dt = new DataTable();
             da = new SqlDataAdapter();
             conn = new SqlConnection();
             conn.ConnectionString = "Data Source=pdmsrv;Initial Catalog=TaskDataBase;Persist Security Info=True;User ID=airventscad;Password=1";
             conn.Open();
-            GetData();
         }
                 
         private DataTable GetData()
         {
+            dt = new DataTable();
             string query = "SELECT PH.hid.ToString() AS hid, P.ProjectName, P.ProjectID "
                             + "FROM ProjectHid "
                             + "PH INNER JOIN Projects P ON P.ProjectID = PH.ProjectID";
@@ -49,8 +48,8 @@ namespace WindowsFormsApplication1
         }
         public void MakeTreeView(TreeView oTV)
         {
-            MessageBox.Show("Nodes quantity = " + oTV.Nodes.Count.ToString());
-            
+            GetData();
+            //MessageBox.Show("Nodes quantity = " + oTV.Nodes.Count.ToString());
             oTV.Nodes.Clear();
             string sKeyField = "HierarchyId";
             TreeNode oNode;
@@ -78,7 +77,7 @@ namespace WindowsFormsApplication1
                 //add the node hierarchy to the tree
                 oTV.Nodes.Add(oNode);
             }
-            MessageBox.Show("ODV quantity = " + oDV.Count.ToString());
+            //MessageBox.Show("ODV quantity = " + oDV.Count.ToString());
         }
         private void LoadNodeSQLHierarchy(TreeNode oParent, DataTable oTable)
         {
@@ -111,39 +110,25 @@ namespace WindowsFormsApplication1
         {
             TreeNode selectedNode = treeView.SelectedNode;
             SqlDataReader reader;
-            SqlCommand command;
-
-            SqlCommand checkingNodes = new SqlCommand("CheckForNodes", conn);
-            checkingNodes.Parameters.AddWithValue("@parent_name", selectedNode.Text);
-            checkingNodes.Parameters.Add("@result", SqlDbType.Int);
-            checkingNodes.Parameters["@result"].Direction = ParameterDirection.Output;
-            checkingNodes.CommandType = CommandType.StoredProcedure;
-
-            reader = checkingNodes.ExecuteReader();
-            int flag = 1;
-            flag = (int)checkingNodes.Parameters["@result"].Value;
-            reader.Close();
-            
-            if (flag == 1)
-            {
-                command = new SqlCommand("AddFirstChildNode2", conn);
-                MessageBox.Show("First node");
-            }
-            else
-            {
-                command = new SqlCommand("AddSecondaryNodes2", conn);
-                MessageBox.Show("Other node");
-            }
-            
+            SqlCommand command = new SqlCommand("AddNewNodes", conn);
             command.CommandType = CommandType.StoredProcedure;
             command.Parameters.AddWithValue("@parent_name", selectedNode.Text);
             command.Parameters.AddWithValue("@new_child_name", txt.Text);
             command.Parameters.AddWithValue("@number", txtNumber.Text);
-            reader = command.ExecuteReader();
-            reader.Close();
+            command.Parameters.Add("@result", SqlDbType.Bit);
+            command.Parameters["@result"].Direction = ParameterDirection.Output;
 
+            reader = command.ExecuteReader();
+
+            //int flag = 1;
+            //flag = (int)command.Parameters["@result"].Value;
+
+            //if (flag == 0)
+            //{
+            //    MessageBox.Show("The node with such name already excist. Pick up another name.");
+            //}
+            reader.Close();
             da.Fill(dt);
-            dt.AcceptChanges();
         }
     }
 }
